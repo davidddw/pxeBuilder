@@ -78,20 +78,15 @@ def setup_esxi_pxe(filename, mac, m_type, ipaddr, hostname):
     gl_config = get_config_from_cfg(filename, 'global')
     mac_name = '01-'+'-'.join(mac.lower().split(":"))
     answer = mac_name +'.ks'
-    bootcfg = mac_name + '.cfg'
     config = get_config_from_cfg(filename, m_type)
     config.update(**gl_config)
     config.update({'ksfile':answer})
-    config.update({'bootcfg':bootcfg})
     config.update({'macaddr':mac})
     config.update({'host_ipaddr':ipaddr})
     config.update({'hostname':hostname})
     generate_file_from_temp(gl_config['temp_folder'],  m_type+'_pxe.in', 
                             gl_config['pxelinux'], mac_name, **config)
     print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
-    generate_file_from_temp(gl_config['temp_folder'], m_type + '_boot.in', 
-                            gl_config['nfs_ans'], bootcfg, **config)
-    print("Info: generate boot.cfg: %s in %s" % (bootcfg, gl_config['nfs_ans']))
     generate_file_from_temp(gl_config['temp_folder'], m_type + '.in', 
                             gl_config['nfs_ans'], answer, **config)
     print("Info: generate ks: %s in %s" % (answer, gl_config['nfs_ans']))

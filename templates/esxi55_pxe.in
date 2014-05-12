@@ -4,5 +4,5 @@ NOHALT 1
 TIMEOUT 3
 LABEL ESXi 5.0 KickStart and HTTP
 KERNEL ${esxi_path}/mboot.c32
-APPEND -c ${nfs_ip}:${nfs_ans}/${bootcfg} ks=${nfs_ip}:${nfs_ans}/${ksfile} +++
+APPEND -c ${esxi_path}/boot.cfg ks=nfs://${nfs_ip}:${nfs_ans}/${ksfile} +++
 IPAPPEND 1
