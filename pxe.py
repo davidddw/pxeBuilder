@@ -42,21 +42,35 @@ def generate_file_from_temp(srcdir,srcfile, destdir, destfile, **karg):
     with open(destfilename, "w") as f:
         f.write(content.substitute(**karg))
         
-def setup_pxe(filename, mac_name, m_type, ipaddr, hostname):
+def setup_xen_pxe(filename, mac_name, m_type, ipaddr, hostname):
     gl_config = get_config_from_cfg(filename, 'global')
     answer = mac_name+'.xml'
     config = get_config_from_cfg(filename, m_type)
     config.update({'answerfile':answer})
     config.update({'xen_ipaddr':ipaddr})
     config.update({'xen_hostname':hostname})
-    generate_file_from_temp(gl_config['temp_folder'], 'pxelinux.in', 
+    generate_file_from_temp(gl_config['temp_folder'], 'xen_pxe.in', 
                             gl_config['pxelinux'], mac_name, **config)
     print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
     generate_file_from_temp(gl_config['temp_folder'], m_type+'.in', 
                             config['nfs_ans'], answer, **config)
     print("Info: generate %s in %s" % (answer, config['nfs_ans']))
     
-def delete_pxe(filename, mac_name, m_type):
+def setup_centos_pxe(filename, mac_name, m_type, ipaddr, hostname):
+    gl_config = get_config_from_cfg(filename, 'global')
+    answer = mac_name+'.ks'
+    config = get_config_from_cfg(filename, m_type)
+    config.update({'answerfile':answer})
+    config.update({'host_ipaddr':ipaddr})
+    config.update({'hostname':hostname})
+    generate_file_from_temp(gl_config['temp_folder'],  m_type+'_pxe.in', 
+                            gl_config['pxelinux'], mac_name, **config)
+    print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
+    generate_file_from_temp(gl_config['temp_folder'], m_type + '.in', 
+                            config['nfs_ans'], answer, **config)
+    print("Info: generate %s in %s" % (answer, config['nfs_ans']))
+    
+def delete_xen_pxe(filename, mac_name, m_type):
     gl_config = get_config_from_cfg(filename, 'global')
     answer = mac_name+'.xml'
     config = get_config_from_cfg(filename, m_type)
@@ -104,7 +118,7 @@ def main(argv=None):
             parser.print_help()
             sys.exit()
         else:
-            setup_pxe(opts.file, mac, opts.type, opts.ip, opts.hostname)
+            setup_xen_pxe(opts.file, mac, opts.type, opts.ip, opts.hostname)
 
     except Exception, e:
         indent = len(program_name) * " "
