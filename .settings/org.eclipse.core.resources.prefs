@@ -3,4 +3,5 @@ encoding/delete_pxe.py=utf-8
 encoding/pxe.py=utf-8
 encoding/pxe_data.py=utf-8
 encoding/setup_centos_pxe.py=utf-8
+encoding/setup_esxi_pxe.py=utf-8
 encoding/setup_xen_pxe.py=utf-8
