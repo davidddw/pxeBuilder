@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<installation>
+    <primary-disk gueststorage="no">sda</primary-disk>
+    <keymap>us</keymap>
+    <root-password>${xen_pass}</root-password>
+    <source type="nfs">${nfs_ip}:${nfs_dir}</source>
+    <admin-interface name="${xen_nic}" proto="static">
+        <ip>${xen_ipaddr}</ip>
+        <subnet-mask>${xen_mask}</subnet-mask>
+        <gateway>${xen_gate}</gateway>
+    </admin-interface>
+    <nameserver>${xen_name}</nameserver>
+    <timezone>Asia/Shanghai</timezone>
+    <hostname>${xen_hostname}</hostname>
+</installation>
