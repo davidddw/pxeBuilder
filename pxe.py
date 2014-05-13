@@ -94,7 +94,10 @@ def setup_esxi_pxe(filename, mac, m_type, ipaddr, hostname):
 def delete_pxe(filename, mac, m_type):
     gl_config = get_config_from_cfg(filename, 'global')
     mac_name = '01-'+'-'.join(mac.lower().split(":"))
-    answer = mac_name+'.xml'
+    if m_type=='xenserver' or m_type=='xcp':
+        answer = mac_name+'.xml'
+    else:
+        answer = mac_name+'.ks'
     mac_file = os.path.join(gl_config['pxelinux'], mac_name)
     answer_file = os.path.join(gl_config['nfs_ans'], answer)
     if os.path.isfile(mac_file):
