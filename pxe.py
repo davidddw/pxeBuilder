@@ -4,9 +4,11 @@
 import sys
 import os
 import ConfigParser 
-from string import Template 
+from string import Template
+from pxe_data import mac 
 
-from optparse import OptionParser
+from argparse import ArgumentParser
+from argparse import RawDescriptionHelpFormatter
 
 def get_real_path():
     current_path = os.path.dirname(os.path.realpath(__file__))
@@ -42,113 +44,192 @@ def generate_file_from_temp(srcdir,srcfile, destdir, destfile, **karg):
     with open(destfilename, "w") as f:
         f.write(content.substitute(**karg))
         
-def setup_xen_pxe(filename, mac, m_type, ipaddr, hostname):
-    gl_config = get_config_from_cfg(filename, 'global')
-    mac_name = '01-'+'-'.join(mac.lower().split(":"))
-    answer = mac_name+'.xml'
-    config = get_config_from_cfg(filename, m_type)
-    config.update({'answerfile':answer})
-    config.update({'xen_ipaddr':ipaddr})
-    config.update({'xen_hostname':hostname})
-    config.update(**gl_config)
-    generate_file_from_temp(gl_config['temp_folder'], 'xen_pxe.in', 
-                            gl_config['pxelinux'], mac_name, **config)
-    print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
-    generate_file_from_temp(gl_config['temp_folder'], m_type+'.in', 
-                            gl_config['nfs_ans'], answer, **config)
-    print("Info: generate %s in %s" % (answer, gl_config['nfs_ans']))
-    
-def setup_centos_pxe(filename, mac, m_type, ipaddr, hostname):
-    gl_config = get_config_from_cfg(filename, 'global')
-    mac_name = '01-'+'-'.join(mac.lower().split(":"))
-    answer = mac_name+'.ks'
-    config = get_config_from_cfg(filename, m_type)
-    config.update(**gl_config)
-    config.update({'answerfile':answer})
-    config.update({'host_ipaddr':ipaddr})
-    config.update({'hostname':hostname})
-    generate_file_from_temp(gl_config['temp_folder'],  m_type+'_pxe.in', 
-                            gl_config['pxelinux'], mac_name, **config)
-    print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
-    generate_file_from_temp(gl_config['temp_folder'], m_type + '.in', 
-                            gl_config['nfs_ans'], answer, **config)
-    print("Info: generate %s in %s" % (answer, gl_config['nfs_ans']))
-    
-def setup_esxi_pxe(filename, mac, m_type, ipaddr, hostname):
-    gl_config = get_config_from_cfg(filename, 'global')
-    mac_name = '01-'+'-'.join(mac.lower().split(":"))
-    answer = mac_name +'.ks'
-    config = get_config_from_cfg(filename, m_type)
-    config.update(**gl_config)
-    config.update({'ksfile':answer})
-    config.update({'macaddr':mac})
-    config.update({'host_ipaddr':ipaddr})
-    config.update({'hostname':hostname})
-    generate_file_from_temp(gl_config['temp_folder'],  m_type+'_pxe.in', 
-                            gl_config['pxelinux'], mac_name, **config)
-    print("Info: generate %s in %s" % (mac_name, gl_config['pxelinux']))
-    generate_file_from_temp(gl_config['temp_folder'], m_type + '.in', 
-                            gl_config['nfs_ans'], answer, **config)
-    print("Info: generate ks: %s in %s" % (answer, gl_config['nfs_ans']))
-    
-def delete_pxe(filename, mac, m_type):
-    gl_config = get_config_from_cfg(filename, 'global')
-    mac_name = '01-'+'-'.join(mac.lower().split(":"))
-    if m_type=='xenserver' or m_type=='xcp':
-        answer = mac_name+'.xml'
-    else:
-        answer = mac_name+'.ks'
-    mac_file = os.path.join(gl_config['pxelinux'], mac_name)
-    answer_file = os.path.join(gl_config['nfs_ans'], answer)
-    if os.path.isfile(mac_file):
-        os.remove(mac_file)
-        print("Info: remove %s" % mac_file)
-    else:
-        print("Info: %s not exist" % mac_file)
-    if os.path.isfile(answer_file):
-        os.remove(answer_file)
-        print("Info: remove %s" % answer_file)
-    else:
-        print("Info: %s not exist" % answer_file)
+class CLIError(Exception):
+    '''Generic exception to raise and log different fatal errors.'''
+    def __init__(self, msg):
+        super(CLIError).__init__(type(self))
+        self.msg = "E: %s" % msg
+    def __str__(self):
+        return self.msg
+    def __unicode__(self):
+        return self.msg
         
-def main(argv=None):
-    program_name = os.path.basename(sys.argv[0])
-    program_version = "v0.1"
-    if argv is None:
-        argv = sys.argv[1:]
-    try:
-        # setup option parser
-        usage = "usage: %prog [options] arg1 arg2"
-        parser = OptionParser(usage=usage, version=program_version)
-        parser.add_option("-f", "--file", default="pxe.cfg", help="set config file [default: %default]")
-        parser.add_option("-t", "--type", dest="type", help="set type")
-        parser.add_option("-i", "--ip", dest="ipaddr", help="set ipaddress")
-        parser.add_option("-n", "--hostname", dest="hostname", help="set hostname")
-        parser.add_option("-m", "--mac", dest="mac", help="set mac address")
-        # process options
-        (opts, args) = parser.parse_args(argv)
-        if opts.mac is None:
-            parser.print_help()
-            sys.exit()
-        else:
-            mac = '01-'+'-'.join(opts.mac.lower().split(":"))
-        if opts.ip is None:
-            parser.print_help()
-            sys.exit()
-        if opts.hostname is None:
-            parser.print_help()
-            sys.exit()
-        if opts.type is None:
-            parser.print_help()
-            sys.exit()
-        else:
-            setup_xen_pxe(opts.file, mac, opts.type, opts.ip, opts.hostname)
+class PXE():
+    def __init__(self, filename, mac):
+        self.gl_config = get_config_from_cfg(filename, 'global')
+        self.mac_name = '01-%s' % '-'.join(mac.lower().split(":"))
+        self.mac = mac
+        self.filename = filename
+        self.tftpboot = os.path.join(os.getcwd(),self.gl_config['tftp_root'], 
+                                     'pxelinux.cfg')
+        self.answer_path = os.path.join(os.getcwd(),self.gl_config['www_root'], 
+                                    self.gl_config['kick_url'])
+        self.temp = self.gl_config['temp_folder']
+        
+    def setup_xen_pxe(self, ipaddr, hostname, m_type='xenserver'):
+        answer = self.mac_name+'.xml'
+        config = get_config_from_cfg(self.filename, m_type)
+        config.update({'answerfile':answer})
+        config.update({'xen_ipaddr':ipaddr})
+        config.update({'xen_hostname':hostname})
+        config.update(**self.gl_config)
+        
+        generate_file_from_temp(self.temp, 'xen_pxe.in', self.tftpboot, 
+                                self.mac_name, **config)
+        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+        generate_file_from_temp(self.temp, m_type+'.in', 
+                                self.answer_path, answer, **config)
+        print("Info: generate %s in %s" % (answer, self.answer_path))
+    
+    def setup_centos_pxe(self, ipaddr, hostname, m_type='centos'):
+        answer = self.mac_name+'.ks'
+        config = get_config_from_cfg(self.filename, m_type)
+        config.update({'answerfile':answer})
+        config.update({'host_ipaddr':ipaddr})
+        config.update({'hostname':hostname})
+        config.update(**self.gl_config)
 
+        generate_file_from_temp(self.temp,  m_type+'_pxe.in', 
+                                self.tftpboot, self.mac_name, **config)
+        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+        generate_file_from_temp(self.temp, m_type + '.in', 
+                                self.answer_path, answer, **config)
+        print("Info: generate %s in %s" % (answer, self.answer_path))
+    
+    def setup_esxi_pxe(self, ipaddr, hostname, m_type='esxi55'):
+        answer = '%s.ks' % self.mac_name
+        cfgfile = '%s.cfg' % self.mac_name
+        config = get_config_from_cfg(self.filename, m_type)
+        config.update(**self.gl_config)
+        config.update({'ksfile':answer})
+        config.update({'cfgfile':cfgfile})
+        config.update({'macaddr':self.mac})
+        config.update({'host_ipaddr':ipaddr})
+        config.update({'hostname':hostname})
+
+        generate_file_from_temp(self.temp, m_type+'_pxe.in', 
+                                self.tftpboot, self.mac_name, **config)
+        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+        generate_file_from_temp(self.temp, m_type + '_cfg.in', 
+                                self.answer_path, cfgfile, **config)
+        print("Info: generate ks: %s in %s" % (cfgfile, self.answer_path))
+        generate_file_from_temp(self.temp, m_type + '.in', 
+                                self.answer_path, answer, **config)
+        print("Info: generate ks: %s in %s" % (answer, self.answer_path))
+        
+    def generate_dhcp_pxe(self, dhcp_name='dhcp'):
+        dhcp_config = get_config_from_cfg(self.filename, 'dhcp')
+        dhcp_config.update(**self.gl_config)
+        myhostString = ""
+        for (k,v) in mac.items():
+            if v != '':
+                myhostString +='dhcp-host=net:%slinux,%s,%s\n' \
+                    % (dhcp_config['pxe_method'], v, '172.16.1.'+ k )
+        dhcp_config.update({'dhcp_hosts':myhostString, 'tftp_root': self.tftpboot})
+        generate_file_from_temp(self.temp, 'dhcp.in', 
+                                dhcp_config['dnsmasq_path'], dhcp_name, **dhcp_config)
+        print("Info: generate ks: %s in %s" % (dhcp_name, dhcp_config['dnsmasq_path'])) 
+    
+    def delete_pxe(self, m_type):
+        if m_type=='xenserver' or m_type=='xcp':
+            answer = '%s.xml' % self.mac_name
+        else:
+            answer = '%s.ks' % self.mac_name
+        mac_file = os.path.join(self.tftpboot, self.mac_name)
+        if os.path.isfile(mac_file):
+            os.remove(mac_file)
+            print("Info: remove %s" % mac_file)
+        else:
+            print("Info: %s not exist" % mac_file)
+        answer_file = os.path.join(self.answer_path, answer)
+        if os.path.isfile(answer_file):
+            os.remove(answer_file)
+            print("Info: remove %s" % answer_file)
+        else:
+            print("Info: %s not exist" % answer_file)
+        if m_type=='esxi':
+            cfg_file = '%s.cfg' % self.mac_name
+            cfg_file = os.path.join(self.answer_path, cfg_file)
+            if os.path.isfile(cfg_file):
+                os.remove(cfg_file)
+                print("Info: remove %s" % cfg_file)
+            else:
+                print("Info: %s not exist" % cfg_file)
+            
+            
+def run(ip_end, m_type):
+    from pxe_data import mac
+    pxe = PXE('pxe.cfg', mac[ip_end])
+    ip = '172.16.1.%s' % ip_end
+    if m_type=='xenserver' or m_type=='xcp':
+        pxe.setup_xen_pxe(ip, m_type+ip_end, m_type)
+    elif m_type=='centos':
+        pxe.setup_centos_pxe(ip, m_type+ip_end)
+    elif m_type=='esxi':
+        pxe.setup_esxi_pxe(ip, m_type+ip_end)
+    elif m_type=='dhcp':
+        pxe.generate_dhcp_pxe()
+        
+def parser_arg(argv=None):
+    from pxe_data import mac
+    if argv is None:
+        argv = sys.argv
+    else:
+        sys.argv.extend(argv)
+
+    program_description = "This is used for generate pxe and ks file."
+    program_name = os.path.basename(sys.argv[0])
+
+    try:
+        parser = ArgumentParser(description=program_description, 
+                                formatter_class=RawDescriptionHelpFormatter)
+        parser.add_argument("-p", "--pxe", dest="dhcp", 
+                            action="store_true", 
+                            help="generate dhcp in dnsmasq folder [default: %(default)s]")
+        parser.add_argument("-f", "--file", default="pxe.cfg", dest="file",
+                            help="set config file [default: %(default)s]")
+        parser.add_argument("-t", "--type", dest="type", help="set type")
+        parser.add_argument("-i", "--ip", dest="ip", help="set ipaddress")
+        parser.add_argument("-n", "--hostname", dest="hostname", help="set hostname")
+        parser.add_argument("-m", "--mac", dest="mac", help="set mac address")
+        parser.add_argument("-d", "--delete", dest="delete", 
+                            action="store_true", 
+                            help="delete mac file")
+        # Process arguments
+        args = parser.parse_args()
+        
+        if not args.mac or not args.type:
+            parser.print_help()
+            sys.exit()
+            
+        pxe = PXE(args.file, args.mac)
+            
+        if args.dhcp:
+            pxe.generate_dhcp_pxe()
+            
+        if args.delete:
+            pxe.delete_pxe(args.type)
+            return 0
+        
+        if args.ip and args.hostname:
+            if args.type=='xenserver' or args.type=='xcp':
+                pxe.setup_xen_pxe(args.ip, args.hostname, args.type)
+            elif args.type=='centos':
+                pxe.setup_centos_pxe(args.ip, args.hostname)
+            elif args.type=='esxi':
+                pxe.setup_esxi_pxe(args.ip, args.hostname)
+            return 0
+       
+        return 0
+    except KeyboardInterrupt:
+        ### handle keyboard interrupt ###
+        return 0
     except Exception, e:
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
+        sys.stderr.write(indent + "  for help use --help\n")
         return 2
     
 if __name__ == "__main__":
-    main()
+    parser_arg()
+    

@@ -3,7 +3,7 @@
     <primary-disk gueststorage="no">sda</primary-disk>
     <keymap>us</keymap>
     <root-password>${xen_pass}</root-password>
-    <source type="nfs">${nfs_ip}:${nfs_dir}</source>
+    <source type="url">${http_server}/${url_path}</source>
     <admin-interface name="${xen_nic}" proto="static">
         <ip>${xen_ipaddr}</ip>
         <subnet-mask>${xen_mask}</subnet-mask>
