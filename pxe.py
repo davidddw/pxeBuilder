@@ -117,7 +117,7 @@ class PXE():
                                 self.answer_path, answer, **config)
         print("Info: generate ks: %s in %s" % (answer, self.answer_path))
         
-    def generate_dhcp_pxe(self, dhcp_name='dhcp'):
+    def generate_dhcp_http_pxe(self, dhcp_name='dhcp', http_name='lighttpd.conf'):
         dhcp_config = get_config_from_cfg(self.filename, 'dhcp')
         dhcp_config.update(**self.gl_config)
         myhostString = ""
@@ -132,8 +132,8 @@ class PXE():
         wwwroot = os.path.join(os.getcwd(),self.gl_config['www_root'])
         dhcp_config.update({'wwwroot':wwwroot})
         generate_file_from_temp(self.temp, 'lighttpd.in', 
-                                dhcp_config['lighttpd_path'], 'lighttpd.conf', **dhcp_config)
-        print("Info: generate lighttpd: %s in %s" % ('lighttpd.conf', dhcp_config['lighttpd_path'])) 
+                                dhcp_config['lighttpd_path'], http_name, **dhcp_config)
+        print("Info: generate lighttpd: %s in %s" % (http_name, dhcp_config['lighttpd_path'])) 
     
     def delete_pxe(self, m_type):
         if m_type=='xenserver' or m_type=='xcp':
@@ -172,7 +172,7 @@ def run(ip_end, m_type):
     elif m_type=='esxi':
         pxe.setup_esxi_pxe(ip, m_type+ip_end)
     elif m_type=='dhcp':
-        pxe.generate_dhcp_pxe()
+        pxe.generate_dhcp_http_pxe()
         
 def parser_arg(argv=None):
     if argv is None:
@@ -208,7 +208,7 @@ def parser_arg(argv=None):
         pxe = PXE(args.file, args.mac)
             
         if args.dhcp:
-            pxe.generate_dhcp_pxe()
+            pxe.generate_dhcp_http_pxe()
             
         if args.delete:
             pxe.delete_pxe(args.type)

@@ -12,6 +12,5 @@ dhcp-boot=net:ipxelinux,ipxelinux.0
 dhcp-boot=net:gpxelinux,gpxelinux.0
 
 ${dhcp_hosts}
-
 enable-tftp
 tftp-root=${tftp_root}
