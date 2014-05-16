@@ -163,7 +163,6 @@ class PXE():
             
             
 def run(ip_end, m_type):
-    from pxe_data import mac
     pxe = PXE('pxe.cfg', mac[ip_end])
     ip = '172.16.1.%s' % ip_end
     if m_type=='xenserver' or m_type=='xcp':
@@ -176,7 +175,6 @@ def run(ip_end, m_type):
         pxe.generate_dhcp_pxe()
         
 def parser_arg(argv=None):
-    from pxe_data import mac
     if argv is None:
         argv = sys.argv
     else:
