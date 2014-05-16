@@ -1,0 +1,8 @@
+server.document-root        = "${wwwroot}"
+server.errorlog             = "/var/log/lighttpd/error.log"
+server.pid-file             = "/var/run/lighttpd.pid"
+server.username             = "www-data"
+server.groupname            = "www-data"
+erver.port                  = 8090
+dir-listing.activate        = "enable"
+dir-listing.encoding        = "utf-8"

@@ -128,7 +128,12 @@ class PXE():
         dhcp_config.update({'dhcp_hosts':myhostString, 'tftp_root': self.tftpboot})
         generate_file_from_temp(self.temp, 'dhcp.in', 
                                 dhcp_config['dnsmasq_path'], dhcp_name, **dhcp_config)
-        print("Info: generate ks: %s in %s" % (dhcp_name, dhcp_config['dnsmasq_path'])) 
+        print("Info: generate dhcp: %s in %s" % (dhcp_name, dhcp_config['dnsmasq_path']))
+        wwwroot = os.path.join(os.getcwd(),self.gl_config['www_root'])
+        dhcp_config.update({'wwwroot':wwwroot})
+        generate_file_from_temp(self.temp, 'lighttpd.in', 
+                                dhcp_config['lighttpd_path'], 'lighttpd.conf', **dhcp_config)
+        print("Info: generate lighttpd: %s in %s" % ('lighttpd.conf', dhcp_config['lighttpd_path'])) 
     
     def delete_pxe(self, m_type):
         if m_type=='xenserver' or m_type=='xcp':
