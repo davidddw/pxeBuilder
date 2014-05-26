@@ -11,8 +11,10 @@ def run(ip_end, m_type):
     ip = '172.16.1.%s' % ip_end
     if m_type=='xenserver' or m_type=='xcp':
         pxe.setup_xen_pxe(ip, m_type+ip_end, m_type)
-    elif m_type=='centos':
-        pxe.setup_centos_pxe(ip, m_type+ip_end)
+    elif m_type=='centos65':
+        pxe.setup_centos_pxe(ip, m_type[:-2]+ip_end, suffix='65')
+    elif m_type=='centos63':
+        pxe.setup_centos_pxe(ip, m_type[:-2]+ip_end, suffix='63')
     elif m_type=='esxi':
         pxe.setup_esxi_pxe(ip, m_type+ip_end)
     elif m_type=='dhcp':

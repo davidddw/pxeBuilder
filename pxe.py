@@ -60,7 +60,8 @@ class PXE():
         self.mac_name = '01-%s' % '-'.join(mac.lower().split(":"))
         self.mac = mac
         self.filename = filename
-        self.tftpboot = os.path.join(os.getcwd(),self.gl_config['tftp_root'], 
+        self.tftpboot = os.path.join(os.getcwd(),self.gl_config['tftp_root'])
+        self.pxelinux = os.path.join(os.getcwd(),self.gl_config['tftp_root'], 
                                      'pxelinux.cfg')
         self.answer_path = os.path.join(os.getcwd(),self.gl_config['www_root'], 
                                     self.gl_config['kick_url'])
@@ -74,24 +75,25 @@ class PXE():
         config.update({'xen_hostname':hostname})
         config.update(**self.gl_config)
         
-        generate_file_from_temp(self.temp, 'xen_pxe.in', self.tftpboot, 
+        generate_file_from_temp(self.temp, 'xen_pxe.in', self.pxelinux, 
                                 self.mac_name, **config)
-        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+        print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
         generate_file_from_temp(self.temp, m_type+'.in', 
                                 self.answer_path, answer, **config)
         print("Info: generate %s in %s" % (answer, self.answer_path))
     
-    def setup_centos_pxe(self, ipaddr, hostname, m_type='centos'):
+    def setup_centos_pxe(self, ipaddr, hostname, m_type='centos', suffix='65'):
         answer = self.mac_name+'.ks'
         config = get_config_from_cfg(self.filename, m_type)
         config.update({'answerfile':answer})
         config.update({'host_ipaddr':ipaddr})
         config.update({'hostname':hostname})
+        config.update({'url_path':m_type+suffix})
         config.update(**self.gl_config)
 
         generate_file_from_temp(self.temp,  m_type+'_pxe.in', 
-                                self.tftpboot, self.mac_name, **config)
-        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+                                self.pxelinux, self.mac_name, **config)
+        print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
         generate_file_from_temp(self.temp, m_type + '.in', 
                                 self.answer_path, answer, **config)
         print("Info: generate %s in %s" % (answer, self.answer_path))
@@ -108,8 +110,8 @@ class PXE():
         config.update({'hostname':hostname})
 
         generate_file_from_temp(self.temp, m_type+'_pxe.in', 
-                                self.tftpboot, self.mac_name, **config)
-        print("Info: generate %s in %s" % (self.mac_name, self.tftpboot))
+                                self.pxelinux, self.mac_name, **config)
+        print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
         generate_file_from_temp(self.temp, m_type + '_cfg.in', 
                                 self.answer_path, cfgfile, **config)
         print("Info: generate ks: %s in %s" % (cfgfile, self.answer_path))
