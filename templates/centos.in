@@ -20,6 +20,28 @@ logvol swap --name=lv_swap --vgname=VolGroup --size=1000 --grow --maxsize=3968
 
 reboot
 
-%packages --nobase
+%packages
+@base
+@console-internet
 @core
+@debugging
+@directory-client
+@hardware-monitoring
+@java-platform
+@large-systems
+@network-file-system-client
+@performance
+@perl-runtime
+@server-platform
+@server-policy
+@workstation-policy
+pax
+oddjob
+sgpio
+device-mapper-persistent-data
+samba-winbind
+certmonger
+pam_krb5
+krb5-workstation
+perl-DBD-SQLite
 %end
