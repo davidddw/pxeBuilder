@@ -9,6 +9,7 @@ firewall --service=ssh
 authconfig --enableshadow --passalgo=sha512
 selinux --permissive
 timezone --utc Asia/Shanghai
+unsupported_hardware
 bootloader --location=mbr --driveorder=sda,sdb --append="crashkernel=auto rhgb quiet"
 clearpart --all --initlabel
 
@@ -34,12 +35,12 @@ reboot
 @perl-runtime
 @server-platform
 @server-policy
-@workstation-policy
+#@workstation-policy
 pax
 oddjob
 sgpio
-device-mapper-persistent-data
-samba-winbind
+#device-mapper-persistent-data
+#samba-winbind
 certmonger
 pam_krb5
 krb5-workstation
