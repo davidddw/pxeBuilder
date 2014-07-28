@@ -22,6 +22,8 @@ timezone --utc Asia/Shanghai
 # Reboot after installation
 reboot --eject 
 #autopart --type=lvm
+# Clear the Master Boot Record
+zerombr
 %include /tmp/part-include
 
 %packages
@@ -31,53 +33,32 @@ reboot --eject
 %pre
 #!/bin/sh
 
-# /dev/sda
-ls /dev/ | grep -q 'sda' > /dev/null
-if [ "$$?" -eq "0" ] ; then
-/usr/sbin/parted --script /dev/sda mklabel gpt
-echo "#partitioning scheme generated in %pre for /dev/sda" > /tmp/part-include
-echo "bootloader --location=mbr --driveorder=sda" >> /tmp/part-include
-echo "clearpart --all" >> /tmp/part-include
-echo "part biosboot --fstype=biosboot --size=1 --ondrive=sda" >> /tmp/part-include
-echo "part /boot --fstype xfs --size 500 --ondrive=sda" >> /tmp/part-include
-echo "part / --fstype xfs --size 1 --grow --ondrive=sda" >> /tmp/part-include
-echo "part pv.01 --size 1 --grow --ondrive=sda" >> /tmp/part-include
-echo "volgroup rootvg01 pv.01" >> /tmp/part-include
-echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended" >> /tmp/part-include
-echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
-fi
+function set_disk()
+{
+    disk=$$1
+    ls /dev/ | grep -q "$$disk" > /dev/null 2>&1
+    if [ "$$?" -eq "0" ] ; then
+        for v_partition in $$(parted -s /dev/$$disk print|awk '/^ / {print $$1}')
+        do
+            /usr/sbin/parted -s /dev/$$disk rm $${v_partition}
+        done
+        /usr/sbin/parted -s /dev/$$disk mklabel gpt
+        echo "#partitioning scheme generated in %pre for /dev/$$disk" > /tmp/part-include
+        echo "clearpart --none" >> /tmp/part-include
+        echo "bootloader --location=mbr" >> /tmp/part-include
+        echo "part biosboot --fstype=biosboot --size=1 --asprimary --ondisk=$$disk" >> /tmp/part-include
+        echo "part /boot --fstype xfs --size 500 --asprimary --ondrive=$$disk" >> /tmp/part-include
+        echo "part / --fstype xfs --size 1 --grow --ondrive=$$disk" >> /tmp/part-include
+        echo "part pv.01 --size 1 --grow --ondrive=$$disk" >> /tmp/part-include
+        echo "volgroup rootvg01 pv.01" >> /tmp/part-include
+        echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended" >> /tmp/part-include
+        echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
+    fi
+}
 
-#1 /dev/hda
-ls /dev/ | grep -q 'hda' > /dev/null
-if [ "$$?" -eq "0" ] ; then
-/usr/sbin/parted --script /dev/hda mklabel gpt
-echo "#partitioning scheme generated in %pre for /dev/hda" > /tmp/part-include
-echo "bootloader --location=mbr --driveorder=hda" >> /tmp/part-include
-echo "clearpart --all" >> /tmp/part-include
-echo "part biosboot --fstype=biosboot --size=1 --ondrive=hda" >> /tmp/part-include
-echo "part /boot --fstype xfs --size 500 --ondrive=hda" >> /tmp/part-include
-echo "part / --fstype xfs --size 1 --grow --ondrive=hda" >> /tmp/part-include
-echo "part pv.01 --size 1 --grow --ondrive=hda" >> /tmp/part-include
-echo "volgroup rootvg01 pv.01" >> /tmp/part-include
-echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended">> /tmp/part-include
-echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
-fi
-
-#1 /dev/xvda
-ls /dev/ | grep -q 'xvda' > /dev/null
-if [ "$$?" -eq "0" ] ; then
-/usr/sbin/parted --script /dev/xvda mklabel gpt
-echo "#partitioning scheme generated in %pre for /dev/xvda" > /tmp/part-include
-echo "bootloader --location=mbr --driveorder=xvda" >> /tmp/part-include
-echo "clearpart --all" >> /tmp/part-include
-echo "part biosboot --fstype=biosboot --size=1 --ondrive=xvda" >> /tmp/part-include
-echo "part /boot --fstype xfs --size 500 --ondrive=xvda" >> /tmp/part-include
-echo "part / --fstype xfs --size 1 --grow --ondrive=xvda" >> /tmp/part-include
-echo "part pv.01 --size 1 --grow --ondrive=xvda" >> /tmp/part-include
-echo "volgroup rootvg01 pv.01" >> /tmp/part-include
-echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended" >> /tmp/part-include
-echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
-fi
+set_disk sda
+set_disk hda
+set_disk xvda
 
 %end
 
