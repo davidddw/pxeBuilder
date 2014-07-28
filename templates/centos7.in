@@ -1,0 +1,94 @@
+#version=RHEL7
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Install, not upgrade
+install
+# Install from a friendly mirror and add updates
+url --url=${http_server}/${url_path}
+# Run the Setup Agent on first boot
+firstboot --enable
+unsupported_hardware
+# System language
+lang en_US.UTF-8
+keyboard us
+# Network information
+network  --device ${host_nic} --onboot yes --bootproto static --ip ${host_ipaddr} --netmask ${host_mask} --gateway ${host_gate} --hostname ${hostname}
+firewall --service=ssh
+selinux --permissive
+# Root password
+rootpw ${host_pass}
+# System timezone
+timezone --utc Asia/Shanghai
+# Reboot after installation
+reboot --eject 
+#autopart --type=lvm
+%include /tmp/part-include
+
+%packages
+@^Infrastructure Server
+%end
+
+%pre
+#!/bin/sh
+
+# /dev/sda
+ls /dev/ | grep -q 'sda' > /dev/null
+if [ "$$?" -eq "0" ] ; then
+/usr/sbin/parted --script /dev/sda mklabel gpt
+echo "#partitioning scheme generated in %pre for /dev/sda" > /tmp/part-include
+echo "bootloader --location=mbr --driveorder=sda" >> /tmp/part-include
+echo "clearpart --all" >> /tmp/part-include
+echo "part biosboot --fstype=biosboot --size=1 --ondrive=sda" >> /tmp/part-include
+echo "part /boot --fstype xfs --size 500 --ondrive=sda" >> /tmp/part-include
+echo "part / --fstype xfs --size 1 --grow --ondrive=sda" >> /tmp/part-include
+echo "part pv.01 --size 1 --grow --ondrive=sda" >> /tmp/part-include
+echo "volgroup rootvg01 pv.01" >> /tmp/part-include
+echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended" >> /tmp/part-include
+echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
+fi
+
+#1 /dev/hda
+ls /dev/ | grep -q 'hda' > /dev/null
+if [ "$$?" -eq "0" ] ; then
+/usr/sbin/parted --script /dev/hda mklabel gpt
+echo "#partitioning scheme generated in %pre for /dev/hda" > /tmp/part-include
+echo "bootloader --location=mbr --driveorder=hda" >> /tmp/part-include
+echo "clearpart --all" >> /tmp/part-include
+echo "part biosboot --fstype=biosboot --size=1 --ondrive=hda" >> /tmp/part-include
+echo "part /boot --fstype xfs --size 500 --ondrive=hda" >> /tmp/part-include
+echo "part / --fstype xfs --size 1 --grow --ondrive=hda" >> /tmp/part-include
+echo "part pv.01 --size 1 --grow --ondrive=hda" >> /tmp/part-include
+echo "volgroup rootvg01 pv.01" >> /tmp/part-include
+echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended">> /tmp/part-include
+echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
+fi
+
+#1 /dev/xvda
+ls /dev/ | grep -q 'xvda' > /dev/null
+if [ "$$?" -eq "0" ] ; then
+/usr/sbin/parted --script /dev/xvda mklabel gpt
+echo "#partitioning scheme generated in %pre for /dev/xvda" > /tmp/part-include
+echo "bootloader --location=mbr --driveorder=xvda" >> /tmp/part-include
+echo "clearpart --all" >> /tmp/part-include
+echo "part biosboot --fstype=biosboot --size=1 --ondrive=xvda" >> /tmp/part-include
+echo "part /boot --fstype xfs --size 500 --ondrive=xvda" >> /tmp/part-include
+echo "part / --fstype xfs --size 1 --grow --ondrive=xvda" >> /tmp/part-include
+echo "part pv.01 --size 1 --grow --ondrive=xvda" >> /tmp/part-include
+echo "volgroup rootvg01 pv.01" >> /tmp/part-include
+echo "logvol swap --vgname=rootvg01 --fstype=swap --name=swap --recommended" >> /tmp/part-include
+echo "logvol / --vgname=rootvg01 --size=1 --name=root --grow" >> /tmp/part-include
+fi
+
+%end
+
+%post
+#!/bin/sh
+echo "# yum --disablerepo=\* --enablerepo=centos7 [command]" > /etc/yum.repos.d/custom.repo
+echo "" >> /etc/yum.repos.d/custom.repo
+echo "[centos7]" >> /etc/yum.repos.d/custom.repo
+echo "name=CentOS-7 - Media" >> /etc/yum.repos.d/custom.repo
+echo "baseurl=http://172.16.39.10/00_mirrors/centos7.0/" >> /etc/yum.repos.d/custom.repo
+echo "gpgcheck=0" >> /etc/yum.repos.d/custom.repo
+echo "enabled=1" >> /etc/yum.repos.d/custom.repo
+echo "gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7" >> /etc/yum.repos.d/custom.repo
+%end

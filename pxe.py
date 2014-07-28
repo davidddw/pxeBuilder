@@ -82,13 +82,13 @@ class PXE():
                                 self.answer_path, answer, **config)
         print("Info: generate %s in %s" % (answer, self.answer_path))
     
-    def setup_centos_pxe(self, ipaddr, hostname, m_type='centos', suffix='65'):
+    def setup_centos_pxe(self, ipaddr, hostname, m_type='centos6', suffix='65'):
         answer = self.mac_name+'.ks'
         config = get_config_from_cfg(self.filename, m_type)
         config.update({'answerfile':answer})
         config.update({'host_ipaddr':ipaddr})
         config.update({'hostname':hostname})
-        config.update({'url_path':m_type+suffix})
+        config.update({'url_path':m_type[:-1] + suffix})
         config.update(**self.gl_config)
 
         generate_file_from_temp(self.temp,  m_type+'_pxe.in', 
@@ -237,4 +237,3 @@ def parser_arg(argv=None):
     
 if __name__ == "__main__":
     parser_arg()
-    
