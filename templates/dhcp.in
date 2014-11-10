@@ -3,14 +3,16 @@
 interface=eth1
 expand-hosts
 domain=example.com
-dhcp-range=${start_ip},${end_ip},1h
-dhcp-option=option:netmask,${netmask}
-dhcp-option=3,${gateway}
+dhcp-range={{start_ip}},{{end_ip}},1h
+dhcp-option=option:netmask,{{netmask}}
+dhcp-option=3,{{gateway}}
 dhcp-lease-max=1000
 dhcp-authoritative
 dhcp-boot=net:ipxelinux,ipxelinux.0
 dhcp-boot=net:gpxelinux,gpxelinux.0
 
-${dhcp_hosts}
+{% for hosts in dhcp_hosts -%}
+dhcp-host=net:{{hosts.pxe_method}}linux,{{hosts.mac}},{{hosts.ip}}
+{% endfor %}
 enable-tftp
-tftp-root=${tftp_root}
+tftp-root={{tftp_root}}

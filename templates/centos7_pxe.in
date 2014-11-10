@@ -2,9 +2,9 @@
 default CentOS_KS_Install
 prompt 1
 timeout 5
-#display ${http_server}/${url_path}/isolinux/boot.msg
+#display {{http_server}}/{{url_path}}/isolinux/boot.msg
 LABEL CentOS_KS_Install
     MENU LABEL KS_Install
-    kernel ${http_server}/${url_path}/isolinux/vmlinuz
-    APPEND initrd=${http_server}/${url_path}/isolinux/initrd.img inst.repo=${http_server}/${url_path}/ inst.ks=${http_server}/${kick_url}/${answerfile} ip=${host_ipaddr}::${host_gate}:${host_mask}:${hostname}:${host_nic}:none bootdev=${host_nic} inst.text
+    kernel {{http_server}}/{{url_path}}/isolinux/vmlinuz
+    APPEND initrd={{http_server}}/{{url_path}}/isolinux/initrd.img inst.repo={{http_server}}/{{url_path}}/ inst.ks={{http_server}}/{{kick_url}}/{{answerfile}} ip={{host_ipaddr}}::{{host_gate}}:{{host_mask}}:{{hostname}}:{{host_nic}}:none bootdev={{host_nic}} inst.text
 
