@@ -124,59 +124,59 @@ class PXE():
                                         self.gl_config['kick_url'])
         self.temp = self.gl_config['temp_folder']
 
-    def setup_xen_pxe(self, hostname, m_type='xenserver'):
+    def setup_xen_pxe(self, hostname, m_type='xenserver', suffix='62'):
         answer = self.mac_name + '.xml'
-        config = get_config_from_cfg(self.conf_file, m_type)
+        config = get_config_from_cfg(self.conf_file, m_type + suffix)
         config.update({'answerfile': answer, 'xen_ipaddr': self.ip,
                        'xen_hostname': hostname,
-                       'src_dir': self.temp, 'src_file': 'xen_pxe.in',
+                       'src_dir': self.temp, 'src_file': config['pxe_file'],
                        'dest_dir': self.pxelinux, 'dest_file': self.mac_name})
         config.update(**self.gl_config)
         generate_file_from_temp(**config)
         print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
 
-        config.update({'src_dir': self.temp, 'src_file': m_type+'.in',
+        config.update({'src_dir': self.temp, 'src_file': config['kick_file'],
                        'dest_dir': self.answer_path, 'dest_file': answer})
 
         generate_file_from_temp(**config)
         print("Info: generate %s in %s" % (answer, self.answer_path))
 
-    def setup_centos_pxe(self, hostname, m_type='centos6', suffix='65'):
+    def setup_centos_pxe(self, hostname, m_type='centos', suffix='65'):
         answer = self.mac_name+'.ks'
-        config = get_config_from_cfg(self.filename, m_type)
+        config = get_config_from_cfg(self.filename, m_type + suffix)
         config.update({'answerfile': answer, 'host_ipaddr': self.ip,
-                       'hostname': hostname, 'url_path': m_type[:-1] + suffix,
-                       'src_dir': self.temp, 'src_file': m_type+'_pxe.in',
+                       'hostname': hostname,
+                       'src_dir': self.temp, 'src_file': config['pxe_file'],
                        'dest_dir': self.pxelinux, 'dest_file': self.mac_name})
         config.update(**self.gl_config)
 
         generate_file_from_temp(**config)
         print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
 
-        config.update({'src_dir': self.temp, 'src_file': m_type+'.in',
+        config.update({'src_dir': self.temp, 'src_file': config['kick_file'],
                        'dest_dir': self.answer_path, 'dest_file': answer})
         generate_file_from_temp(**config)
         print("Info: generate %s in %s" % (answer, self.answer_path))
 
-    def setup_esxi_pxe(self, hostname, m_type='esxi55'):
+    def setup_esxi_pxe(self, hostname, m_type='esxi', suffix='55'):
         answer = '%s.ks' % self.mac_name
         cfgfile = '%s.cfg' % self.mac_name
-        config = get_config_from_cfg(self.filename, m_type)
+        config = get_config_from_cfg(self.filename, m_type + suffix)
         config.update(**self.gl_config)
         config.update({'ksfile': answer, 'cfgfile': cfgfile,
                        'macaddr': self.mac, 'host_ipaddr': self.ip,
                        'hostname': hostname,
-                       'src_dir': self.temp, 'src_file': m_type+'_pxe.in',
+                       'src_dir': self.temp, 'src_file': config['pxe_file'],
                        'dest_dir': self.pxelinux, 'dest_file': self.mac_name})
         generate_file_from_temp(**config)
         print("Info: generate %s in %s" % (self.mac_name, self.pxelinux))
 
-        config.update({'src_dir': self.temp, 'src_file': m_type+'_cfg.in',
+        config.update({'src_dir': self.temp, 'src_file': config['cfg_file'],
                        'dest_dir': self.answer_path, 'dest_file': cfgfile})
         generate_file_from_temp(**config)
         print("Info: generate ks: %s in %s" % (cfgfile, self.answer_path))
 
-        config.update({'src_dir': self.temp, 'src_file': m_type+'.in',
+        config.update({'src_dir': self.temp, 'src_file': config['kick_file'],
                        'dest_dir': self.answer_path, 'dest_file': answer})
         generate_file_from_temp(**config)
         print("Info: generate ks: %s in %s" % (answer, self.answer_path))
