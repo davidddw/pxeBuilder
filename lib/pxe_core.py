@@ -257,18 +257,6 @@ class PXE():
             raise ReturnCodeError(exc, return_code)
 
 
-def run(ip_suffix, m_type):
-    ip = '172.16.1.{}'.format(ip_suffix)
-    pxe = PXE(ip)
-    if m_type == 'xenserver' or m_type == 'xcp':
-        pxe.setup_xen_pxe(m_type + ip_suffix, m_type)
-    elif m_type == 'centos':
-        pxe.setup_centos_pxe(m_type + ip_suffix)
-    elif m_type == 'esxi':
-        pxe.setup_esxi_pxe(m_type + ip_suffix)
-    pxe.generate_dhcp_http_pxe()
-
-
 def parser_arg(argv=None):
     if argv is None:
         argv = sys.argv

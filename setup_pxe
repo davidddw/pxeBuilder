@@ -8,7 +8,7 @@ from lib.pxe_core import PXE
 def run(ip_suffix, name):
     ip = '172.16.1.{0}'.format(ip_suffix)
     pxe = PXE(ip)
-    m_type, suffix = name[:-2], name[-2:]
+    m_type, suffix = name[:-3], name[-3:]
     if m_type == 'xenserver' or m_type == 'xcp':
         pxe.setup_xen_pxe(m_type + ip_suffix, m_type)
     elif m_type == 'centos':
