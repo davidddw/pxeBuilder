@@ -110,6 +110,7 @@ class PXE():
         elif ip in self.mac_addrs:
             self.mac = self.mac_addrs[ip]
         else:
+            print "Cannot find %s in %s" % (ip, mac_file)
             sys.exit()
 
         self.mac_name = '01-{0}'.format('-'.join(self.mac.lower().split(":")))

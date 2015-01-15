@@ -3,16 +3,11 @@
 
 import sys
 from lib.pxe_core import PXE
-from lib.pxe_core import get_json_from_cfg
 
 
-def check(ip, param):
+def check(param):
     support_types = ('xenserver650', 'xenserver620', 'centos65m', 'centos65b',
                      'centos70m', 'centos70b', 'xcp000', 'esxi550')
-    ip_addrs = get_json_from_cfg('mac.json')
-    if ip not in ip_addrs:
-        print "Cannot find %s in mac.json" % ip
-        sys.exit()
 
     if param not in support_types:
         print "Input error. os_type only support %s" % str(support_types)
@@ -22,7 +17,7 @@ def check(ip, param):
 def run(ip_suffix, name):
     ip = '172.16.1.{0}'.format(ip_suffix)
     pxe = PXE(ip)
-    check(ip, name)
+    check(name)
     m_type, suffix = name[:-3], name[-3:]
     if m_type == 'xenserver' or m_type == 'xcp':
         pxe.setup_xen_pxe(m_type + ip_suffix, m_type, suffix)
