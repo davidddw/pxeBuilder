@@ -5,12 +5,21 @@ import sys
 from lib.pxe_core import PXE
 
 
+def check(param):
+    support_types = ('xenserver650', 'xenserver620', 'centos65m', 'centos65b',
+                     'centos70m', 'centos70b', 'xcp000', 'esxi550')
+    if param not in support_types:
+        print "Input Error. Only support %s" % support_types
+        sys.exit()
+
+
 def run(ip_suffix, name):
     ip = '172.16.1.{0}'.format(ip_suffix)
     pxe = PXE(ip)
+    check(name)
     m_type, suffix = name[:-3], name[-3:]
     if m_type == 'xenserver' or m_type == 'xcp':
-        pxe.setup_xen_pxe(m_type + ip_suffix, m_type)
+        pxe.setup_xen_pxe(m_type + ip_suffix, m_type, suffix)
     elif m_type == 'centos':
         pxe.setup_centos_pxe(m_type + ip_suffix, m_type, suffix)
     elif m_type == 'esxi':
@@ -19,4 +28,8 @@ def run(ip_suffix, name):
 
 
 if __name__ == "__main__":
-    run(sys.argv[1], sys.argv[2])
+    if len(sys.argv) < 3:
+        print 'Usage: setup_pxe <ip_suffix> <os_type>'
+        sys.exit()
+    else:
+        run(sys.argv[1], sys.argv[2])
